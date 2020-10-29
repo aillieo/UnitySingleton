@@ -36,7 +36,7 @@ namespace AillieoUtils
             m_instance = customInstance;
         }
 
-        public static void InternalCreateInstance()
+        protected static void InternalCreateInstance()
         {
             if (m_instance == null)
             {

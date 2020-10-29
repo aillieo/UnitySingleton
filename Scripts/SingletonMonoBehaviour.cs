@@ -21,7 +21,7 @@ namespace AillieoUtils
             }
         }
 
-        public static void CreateInstance()
+        protected static void CreateInstance()
         {
             if (m_instance == null)
             {
