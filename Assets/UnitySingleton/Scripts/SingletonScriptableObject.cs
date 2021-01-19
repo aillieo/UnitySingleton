@@ -20,6 +20,14 @@ namespace AillieoUtils
             }
         }
 
+        public static bool HasInstance
+        {
+            get
+            {
+                return m_instance != null;
+            }
+        }
+
         public static void TryConfigInstanceManually(T customInstance)
         {
             if(customInstance == null)
