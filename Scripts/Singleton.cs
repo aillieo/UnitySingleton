@@ -17,6 +17,14 @@ namespace AillieoUtils
             }
         }
 
+        public static bool HasInstance
+        {
+            get
+            {
+                return m_instance != null;
+            }
+        }
+
         public static void Destroy()
         {
             m_instance = null;

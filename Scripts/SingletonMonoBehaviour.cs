@@ -21,6 +21,14 @@ namespace AillieoUtils
             }
         }
 
+        public static bool HasInstance
+        {
+            get
+            {
+                return m_instance != null;
+            }
+        }
+
         protected static void CreateInstance()
         {
             if (m_instance == null)
