@@ -50,6 +50,18 @@ namespace AillieoUtils
             {
                 m_instance = Resources.FindObjectsOfTypeAll<T>().FirstOrDefault();
 
+#if UNITY_EDITOR
+                // 很诡异 编辑器经常出现 第一次运行的时候取不到
+                if (m_instance == null)
+                {
+                    string[] guids = UnityEditor.AssetDatabase.FindAssets($"t:{typeof(T).Name}");
+                    if (guids.Length > 0)
+                    {
+                        m_instance = Resources.Load<T>(UnityEditor.AssetDatabase.GUIDToAssetPath(guids[0]));
+                    }
+                }
+#endif
+
                 if (m_instance == null)
                 {
                     throw new Exception($"Failed to create instance for {typeof(T)}");
