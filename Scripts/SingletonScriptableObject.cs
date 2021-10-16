@@ -37,7 +37,7 @@ namespace AillieoUtils
 
             if(m_instance != null)
             {
-                Debug.LogError($"typeof {typeof(T)} already has a instance");
+                Debug.LogError($"typeof {typeof(T)} already has an instance");
                 return;
             }
 
