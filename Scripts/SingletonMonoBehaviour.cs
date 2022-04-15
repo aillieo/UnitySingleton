@@ -91,6 +91,7 @@ namespace AillieoUtils
             }
         }
 
+#if UNITY_EDITOR
         private static void OnApplicationPlayModeStateChanged(PlayModeStateChange playModeStateChange)
         {
             switch (playModeStateChange)
@@ -110,5 +111,6 @@ namespace AillieoUtils
                     break;
             }
         }
+#endif
     }
 }
