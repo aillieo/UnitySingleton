@@ -60,6 +60,25 @@ namespace AillieoUtils
                         m_instance = Resources.Load<T>(UnityEditor.AssetDatabase.GUIDToAssetPath(guids[0]));
                     }
                 }
+
+                // 似乎是Unity的bug 可以使用这种方式暴力查找来绕开
+                if (m_instance == null)
+                {
+                    string[] guids = UnityEditor.AssetDatabase.FindAssets($"t:ScriptableObject");
+                    if (guids.Length > 0)
+                    {
+                        foreach (var guid in guids)
+                        {
+                            string path = UnityEditor.AssetDatabase.GUIDToAssetPath(guid);
+                            ScriptableObject obj = UnityEditor.AssetDatabase.LoadAssetAtPath<ScriptableObject>(path);
+                            if (obj is T t)
+                            {
+                                m_instance = t;
+                                break;
+                            }
+                        }
+                    }
+                }
 #endif
 
                 if (m_instance == null)
