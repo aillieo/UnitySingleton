@@ -73,7 +73,10 @@ namespace AillieoUtils
 
         protected void OnDestroy()
         {
-            m_instance = null;
+            if (m_instance == this)
+            {
+                m_instance = null;
+            }
         }
 
         protected void OnApplicationQuit()
