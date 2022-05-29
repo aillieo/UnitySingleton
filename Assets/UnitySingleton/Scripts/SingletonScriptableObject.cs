@@ -160,6 +160,7 @@ namespace AillieoUtils
 
         internal class Provider : SettingsProvider
         {
+            private static readonly string prefix = "Project/";
             private readonly Type type;
 
             private ScriptableObject asset;
@@ -170,7 +171,7 @@ namespace AillieoUtils
             {
                 base.OnTitleBarGUI();
 
-                if (GUILayout.Button(EditorGUIUtility.TrIconContent("_Popup"), "MiniPopup"))
+                if (GUILayout.Button(EditorGUIUtility.IconContent("_Popup"), "IN TitleText"))
                 {
                     contextMenu.ShowAsContext();
                 }
@@ -215,18 +216,27 @@ namespace AillieoUtils
             [SettingsProviderGroup]
             public static SettingsProvider[] RegisterSettingsProviders()
             {
-                return singletonScriptableObjectTypes.Select(type =>
-                {
-                    var settingsMenuPath = type.GetCustomAttribute<SettingsMenuPathAttribute>();
-                    if (settingsMenuPath != null)
+                return singletonScriptableObjectTypes
+                    .Where(type => type != null)
+                    .Select(type =>
                     {
-                        return new Provider($"Project/{settingsMenuPath.path}", type);
-                    }
-                    else
-                    {
-                        return new Provider(type.FullName.Replace('.', '/'), type);
-                    }
-                }).ToArray();
+                        string path = string.Empty;
+                        var settingsMenuPath = type.GetCustomAttribute<SettingsMenuPathAttribute>();
+                        if (settingsMenuPath != null && !string.IsNullOrWhiteSpace(settingsMenuPath.path))
+                        {
+                            path = $"{settingsMenuPath.path}";
+                            if (!path.StartsWith(prefix, StringComparison.InvariantCulture))
+                            {
+                                path = prefix + path;
+                            }
+                        }
+                        else
+                        {
+                            path = type.FullName.Replace('.', '/');
+                        }
+
+                        return new Provider(path, type);
+                    }).ToArray();
             }
         }
 
