@@ -1,14 +1,14 @@
 ## UnitySingleton
 
-[中文版本](README.zh-cn.md)
+[English version](README.md)
 
-UnitySingleton provides six types of singleton base classes, which can be used to create the corresponding derived types as needed.
+UnitySingleton 提供了六种类型的单例的基类，在使用时根据需要创建对应的衍生类型即可。
 
-### Singleton
+### 简单单例
 
-The most commonly used singleton and the basic implementation of the singleton pattern.
+最常用的单例，是单例模式最基本的实现。
 
-Class definition:
+定义单例：
 
 ```c#
 public class MySingleton : Singleton<MySingleton>
@@ -19,17 +19,17 @@ public class MySingleton : Singleton<MySingleton>
 }
 ```
 
-Use:
+使用单例：
 
 ```c#
 MySingleton.Instance.MyMethod();
 ```
 
-### SingletonMonoBehaviour
+### MonoBehaviour单例
 
-Singleton based on `MonoBehaviour`.
+基于`MonoBehaviour`的单例。
 
-Class definition:
+定义单例：
 
 ```c#
 public class MySingletonMonoBehaviour : SingletonMonoBehaviour<MySingletonMonoBehaviour>
@@ -40,21 +40,21 @@ public class MySingletonMonoBehaviour : SingletonMonoBehaviour<MySingletonMonoBe
 }
 ```
 
-Use:
+使用单例：
 
 ```c#
 MySingletonMonoBehaviour.Instance.MyMethod();
 ```
 
-The instance will be displayed in Hierarchy after created:
+当单例被创建后，在Hierarchy中会显示：
 
 ![image_01](Screenshots/image_01.png)
 
-### SingletonScriptableObject
+### ScriptableObject单例
 
-Singleton based on `ScriptableObject`.
+基于`ScriptableObject`的单例。
 
-Class definition:
+定义单例：
 
 ```c#
 public class MySingletonScriptableObject : SingletonScriptableObject<MySingletonScriptableObject>
@@ -64,17 +64,17 @@ public class MySingletonScriptableObject : SingletonScriptableObject<MySingleton
 }
 ```
 
-Use:
+使用单例：
 
 ```c#
 UnityEngine.Debug.Log($"intValue is {MySingletonScriptableObject.Instance.intValue}");
 ```
 
-After the singleton class has been created, it can be edited on the Project Settings page. The path to the page can be specified by adding the `SettingsMenuPath` attribute.
+当创建单例类之后，可以在Project Settings页面编辑。编辑页面的路径可通过添加`SettingsMenuPath`属性来指定。
 
 ![image_02](Screenshots/image_02.png)
 
-Whether to include the instance (asset) of the ScriptableObject in the build process to make it available in runtime player can be defined by overriding the `ShouldIncludeInBuild` method, e.g.:
+是否在构建时包含ScriptableObject单例的实例（asset）以在运行时使用，可以通过覆写`ShouldIncludeInBuild`方法来定义，例如：
 
 ```c#
 protected override bool ShouldIncludeInBuild(BuildReport report)
@@ -85,9 +85,9 @@ protected override bool ShouldIncludeInBuild(BuildReport report)
 }
 ```
 
-### SingletonPersistent
+### 持久化单例
 
-Class definition:
+定义单例：
 
 ```c#
 public class MySingletonPersistent : SingletonPersistent<MySingletonPersistent>
@@ -98,11 +98,11 @@ public class MySingletonPersistent : SingletonPersistent<MySingletonPersistent>
 }
 ```
 
-A SingletonPersistent instance supports runtime persistence, and by default JSON format is used. Overriding 'OnSave' and 'OnLoad' to customize the saving and loading process.
+单例支持运行时持久化存储，默认使用json格式存储，覆写'OnSave'和'OnLoad'以定制化存储和加载逻辑。
 
-### SingletonThreadSafe
+### 线程安全单例
 
-Class definition:
+定义单例：
 
 ```c#
 public class MySingletonThreadSafe : SingletonThreadSafe<MySingletonThreadSafe>
@@ -116,9 +116,9 @@ public class MySingletonThreadSafe : SingletonThreadSafe<MySingletonThreadSafe>
 }
 ```
 
-### SingletonThreadLocal
+### 线程独有单例
 
-Class definition:
+定义单例：
 
 ```c#
 public class MySingletonThreadLocal : SingletonThreadLocal<MySingletonThreadLocal>
@@ -130,6 +130,6 @@ public class MySingletonThreadLocal : SingletonThreadLocal<MySingletonThreadLoca
 }
 ```
 
-## Installation
+## 安装
 
-Clone this repository and copy it to your project folder, or add https://github.com/aillieo/UnitySingleton.git#upm as a dependency in the Package Manager window.
+克隆此仓库并放入工程目录中即可，或者在Package Manager窗口中将`https://github.com/aillieo/UnitySingleton.git#upm`添加为依赖项。
