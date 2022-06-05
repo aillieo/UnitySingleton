@@ -53,12 +53,12 @@ namespace AillieoUtils
 
     public abstract class BaseSingletonScriptableObject : ScriptableObject
     {
-        protected virtual bool ShouldIncludeInBuild()
+
+#if UNITY_EDITOR
+        protected virtual bool ShouldIncludeInBuild(BuildReport report)
         {
             return true;
         }
-
-#if UNITY_EDITOR
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void LoadAllInstances()
@@ -262,7 +262,7 @@ namespace AillieoUtils
                     AssetDatabase.DeleteAsset(path);
 
                     var asset = LoadOrCreateInstanceForType(type);
-                    if (!(asset is BaseSingletonScriptableObject filter && filter.ShouldIncludeInBuild()))
+                    if (!(asset is BaseSingletonScriptableObject filter && filter.ShouldIncludeInBuild(report)))
                     {
                         continue;
                     }
