@@ -8,7 +8,6 @@ using System.Text;
 
 namespace AillieoUtils
 {
-    // 用于在ProjectSettings 显示 覆盖默认的path
     [AttributeUsage(AttributeTargets.Class, Inherited = false)]
     public class PersistentPathAttribute : Attribute
     {
@@ -24,7 +23,8 @@ namespace AillieoUtils
     {
         private static Dictionary<Type, string> cache;
         private static readonly string prefix = "SingletonObjs";
-        public static string GetPath(Type type)
+
+        private static string GetPath(Type type)
         {
             if (cache == null)
             {
@@ -135,6 +135,7 @@ namespace AillieoUtils
                         writer.Close();
                     }
                 }
+
                 return true;
             }
             catch (Exception e)

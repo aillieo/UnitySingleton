@@ -35,6 +35,7 @@ namespace AillieoUtils
 
         protected virtual void Awake()
         {
+            Debug.Log($"SingletonScriptableObject Awake: {typeof(T)}");
             m_instance = this as T;
         }
     }
@@ -44,10 +45,12 @@ namespace AillieoUtils
     public class SettingsMenuPathAttribute : Attribute
     {
         internal readonly string path;
+        internal readonly string[] keywords;
 
-        public SettingsMenuPathAttribute(string path)
+        public SettingsMenuPathAttribute(string path, string[] keywords = null)
         {
             this.path = path;
+            this.keywords = keywords;
         }
     }
 
@@ -198,7 +201,7 @@ namespace AillieoUtils
                 }
             }
 
-            private Provider(string path, Type type)
+            private Provider(string path, Type type, string[] keywords)
                 : base(path, SettingsScope.Project)
             {
                 this.type = type;
@@ -206,11 +209,18 @@ namespace AillieoUtils
                 this.contextMenu = new GenericMenu();
                 this.contextMenu.AddItem(new GUIContent("Reset"), false, () => ResetInstance(this.type));
 
-                this.keywords = type.FullName.Split('.')
-                    .Append("Aillieo")
-                    .Append("AillieoUtils")
-                    .Append("Singleton")
-                    .Append("ScriptableObject");
+                if (keywords != null)
+                {
+                    this.keywords = keywords;
+                }
+                else
+                {
+                    this.keywords = type.FullName.Split('.')
+                        .Append("Aillieo")
+                        .Append("AillieoUtils")
+                        .Append("Singleton")
+                        .Append("ScriptableObject");
+                }
             }
 
             [SettingsProviderGroup]
@@ -221,21 +231,21 @@ namespace AillieoUtils
                     .Select(type =>
                     {
                         string path = string.Empty;
+                        string[] keywords = null;
                         var settingsMenuPath = type.GetCustomAttribute<SettingsMenuPathAttribute>();
-                        if (settingsMenuPath != null && !string.IsNullOrWhiteSpace(settingsMenuPath.path))
+
+                        if (settingsMenuPath != null)
                         {
+                            keywords = settingsMenuPath.keywords;
                             path = $"{settingsMenuPath.path}";
-                            if (!path.StartsWith(prefix, StringComparison.InvariantCulture))
-                            {
-                                path = prefix + path;
-                            }
                         }
-                        else
+
+                        if (string.IsNullOrWhiteSpace(path))
                         {
                             path = type.FullName.Replace('.', '/');
                         }
 
-                        return new Provider(path, type);
+                        return new Provider(path, type, keywords);
                     }).ToArray();
             }
         }
