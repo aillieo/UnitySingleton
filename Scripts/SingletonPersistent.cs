@@ -78,7 +78,7 @@ namespace AillieoUtils
         {
             if (HasInstance)
             {
-                string path = TypeToPathCache.GetPath<T>();
+                var path = TypeToPathCache.GetPath<T>();
                 instance.OnSave(path);
             }
         }
@@ -101,7 +101,7 @@ namespace AillieoUtils
                 {
                     using (var reader = new StreamReader(file, Encoding.UTF8))
                     {
-                        string json = reader.ReadToEnd();
+                        var json = reader.ReadToEnd();
                         JsonUtility.FromJsonOverwrite(json, this);
                     }
                 }
@@ -124,7 +124,7 @@ namespace AillieoUtils
         {
             try
             {
-                string dir = Path.GetDirectoryName(path);
+                var dir = Path.GetDirectoryName(path);
                 if (!Directory.Exists(dir))
                 {
                     Directory.CreateDirectory(dir);
@@ -134,7 +134,7 @@ namespace AillieoUtils
                 {
                     using (var writer = new StreamWriter(file, Encoding.UTF8))
                     {
-                        string json = JsonUtility.ToJson(this);
+                        var json = JsonUtility.ToJson(this);
                         writer.Write(json);
                         writer.Close();
                     }
@@ -171,7 +171,7 @@ namespace AillieoUtils
                     .ToDictionary(tp => tp.Item1, tp => Path.Combine(Application.persistentDataPath, tp.Item2.path));
             }
 
-            if (!cache.TryGetValue(type, out string path))
+            if (!cache.TryGetValue(type, out var path))
             {
                 path = Path.Combine(Application.persistentDataPath, prefix, type.FullName);
                 cache.Add(type, path);
