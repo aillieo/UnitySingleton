@@ -1,47 +1,67 @@
-using UnityEngine;
-#if UNITY_EDITOR
-using UnityEditor;
-#endif
+// -----------------------------------------------------------------------
+// <copyright file="SingletonMonoBehaviour.cs" company="AillieoTech">
+// Copyright (c) AillieoTech. All rights reserved.
+// </copyright>
+// -----------------------------------------------------------------------
 
 namespace AillieoUtils
 {
-    public abstract class SingletonMonoBehaviour<T> : MonoBehaviour where T : MonoBehaviour
-    {
-        private static T m_instance;
-        protected static bool m_quitting;
+    using UnityEngine;
+#if UNITY_EDITOR
+    using UnityEditor;
 
+#endif
+
+    /// <summary>
+    /// Base singleton <see cref = "MonoBehaviour" /> class.
+    /// </summary>
+    /// <typeparam name="T">Type of singleton class.</typeparam>
+    public abstract class SingletonMonoBehaviour<T> : MonoBehaviour
+        where T : SingletonMonoBehaviour<T>
+    {
+        private static T instance;
+
+        /// <summary>
+        /// Gets a value indicating whether the instance is created.
+        /// </summary>
+        public static bool HasInstance => instance != null;
+
+        /// <summary>
+        /// Gets the instance of the singleton.
+        /// </summary>
         public static T Instance
         {
             get
             {
-                if(m_instance == null)
+                if (instance == null)
                 {
                     CreateInstance();
                 }
-                return m_instance;
+
+                return instance;
             }
         }
 
-        public static bool HasInstance
-        {
-            get
-            {
-                return m_instance != null;
-            }
-        }
+        /// <summary>
+        /// Gets a value indicating whether the application is quiting.
+        /// </summary>
+        protected static bool quitting { get; private set; }
 
+        /// <summary>
+        /// Create the singleton instance.
+        /// </summary>
         protected static void CreateInstance()
         {
-            if (m_quitting)
+            if (quitting)
             {
                 Debug.LogWarning($"Singleton of type {typeof(T).Name} will not be created while application is quiting");
                 return;
             }
 
-            if (m_instance == null)
+            if (instance == null)
             {
                 var go = new GameObject($"[{typeof(T).Name}]");
-                m_instance = go.AddComponent<T>();
+                instance = go.AddComponent<T>();
 #if UNITY_EDITOR
                 if (Application.isPlaying)
                 {
@@ -51,6 +71,7 @@ namespace AillieoUtils
                 {
                     go.hideFlags = HideFlags.HideAndDontSave;
                 }
+
                 EditorApplication.playModeStateChanged -= OnApplicationPlayModeStateChanged;
                 EditorApplication.playModeStateChanged += OnApplicationPlayModeStateChanged;
 #else
@@ -59,36 +80,45 @@ namespace AillieoUtils
             }
         }
 
-        private void Awake()
+        /// <summary>
+        /// Awake method for <see cref="MonoBehaviour"/>.
+        /// </summary>
+        protected virtual void Awake()
         {
-            if (m_instance != null && m_instance != this)
+            if (instance != null && instance != this)
             {
                 Destroy(this.gameObject);
             }
             else
             {
-                m_instance = this as T;
+                instance = this as T;
             }
         }
 
-        protected void OnDestroy()
+        /// <summary>
+        /// OnDestroy method for <see cref="MonoBehaviour"/>.
+        /// </summary>
+        protected virtual void OnDestroy()
         {
-            if (m_instance == this)
+            if (instance == this)
             {
-                m_instance = null;
+                instance = null;
             }
         }
 
-        protected void OnApplicationQuit()
+        /// <summary>
+        /// OnApplicationQuit method for <see cref="MonoBehaviour"/>.
+        /// </summary>
+        protected virtual void OnApplicationQuit()
         {
-            m_quitting = true;
+            quitting = true;
 
-            if (m_instance != null)
+            if (instance != null)
             {
 #if UNITY_EDITOR
-                GameObject.DestroyImmediate(m_instance.gameObject);
+                GameObject.DestroyImmediate(instance.gameObject);
 #else
-                GameObject.Destroy(m_instance.gameObject);
+                GameObject.Destroy(instance.gameObject);
 #endif
 
             }
@@ -101,16 +131,17 @@ namespace AillieoUtils
             {
                 case PlayModeStateChange.EnteredEditMode:
                 case PlayModeStateChange.EnteredPlayMode:
-                    m_quitting = false;
+                    quitting = false;
                     break;
                 case PlayModeStateChange.ExitingEditMode:
                 case PlayModeStateChange.ExitingPlayMode:
-                    m_quitting = true;
-                    if (m_instance != null)
+                    quitting = true;
+                    if (instance != null)
                     {
-                        GameObject.DestroyImmediate(m_instance.gameObject);
-                        m_instance = null;
+                        GameObject.DestroyImmediate(instance.gameObject);
+                        instance = null;
                     }
+
                     break;
             }
         }

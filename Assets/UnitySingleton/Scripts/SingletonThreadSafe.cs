@@ -1,26 +1,31 @@
-using System;
-using System.Threading;
+// -----------------------------------------------------------------------
+// <copyright file="SingletonThreadSafe.cs" company="AillieoTech">
+// Copyright (c) AillieoTech. All rights reserved.
+// </copyright>
+// -----------------------------------------------------------------------
 
 namespace AillieoUtils
 {
-    public abstract class SingletonThreadSafe<T> where T : class, new()
+    using System;
+    using System.Threading;
+
+    /// <summary>
+    /// Thread-safe base singleton class.
+    /// </summary>
+    /// <typeparam name="T">Type of singleton class.</typeparam>
+    public abstract class SingletonThreadSafe<T>
+        where T : SingletonThreadSafe<T>, new()
     {
-        private static readonly Lazy<T> m_instance = new Lazy<T>(() => new T(), LazyThreadSafetyMode.ExecutionAndPublication);
+        private static readonly Lazy<T> instance = new Lazy<T>(() => new T(), LazyThreadSafetyMode.ExecutionAndPublication);
 
-        public static bool HasInstance
-        {
-            get
-            {
-                return m_instance.IsValueCreated;
-            }
-        }
+        /// <summary>
+        /// Gets a value indicating whether the instance is created.
+        /// </summary>
+        public static bool HasInstance => instance.IsValueCreated;
 
-        public static T Instance
-        {
-            get
-            {
-                return m_instance.Value;
-            }
-        }
+        /// <summary>
+        /// Gets the instance of the singleton.
+        /// </summary>
+        public static T Instance => instance.Value;
     }
 }
