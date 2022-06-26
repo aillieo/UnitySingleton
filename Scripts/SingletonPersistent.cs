@@ -1,95 +1,93 @@
-using System;
-using UnityEngine;
-using System.IO;
-using System.Reflection;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+// -----------------------------------------------------------------------
+// <copyright file="SingletonPersistent.cs" company="AillieoTech">
+// Copyright (c) AillieoTech. All rights reserved.
+// </copyright>
+// -----------------------------------------------------------------------
 
 namespace AillieoUtils
 {
+    using System;
+    using System.Collections.Generic;
+    using System.IO;
+    using System.Linq;
+    using System.Reflection;
+    using System.Text;
+    using UnityEngine;
+
+    /// <summary>
+    /// Provides custom path to save the <see cref="SingletonPersistent{T}"/> instance.
+    /// </summary>
     [AttributeUsage(AttributeTargets.Class, Inherited = false)]
-    public class PersistentPathAttribute : Attribute
+    public sealed class PersistentPathAttribute : Attribute
     {
         internal readonly string path;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="PersistentPathAttribute"/> class.
+        /// </summary>
+        /// <param name="path">Path to save the singleton instance.</param>
         public PersistentPathAttribute(string path)
         {
             this.path = path;
         }
     }
 
-    internal static class TypeToPathCache
+    /// <summary>
+    /// Base singleton class that supports persistent.
+    /// </summary>
+    /// <typeparam name="T">Type of singleton class.</typeparam>
+    public abstract class SingletonPersistent<T>
+        where T : SingletonPersistent<T>, new()
     {
-        private static Dictionary<Type, string> cache;
-        private static readonly string prefix = "SingletonObjs";
+        private static T instance;
 
-        private static string GetPath(Type type)
-        {
-            if (cache == null)
-            {
-                cache = AppDomain.CurrentDomain.GetAssemblies()
-                    .SelectMany(a => a.GetTypes())
-                    .Select(t => (t, t.GetCustomAttribute<PersistentPathAttribute>()))
-                    .Where(tp => tp.Item2 != null)
-                    .ToDictionary(tp => tp.Item1, tp => Path.Combine(Application.persistentDataPath, tp.Item2.path));
-            }
+        /// <summary>
+        /// Gets a value indicating whether the instance is created.
+        /// </summary>
+        public static bool HasInstance => instance != null;
 
-            if (!cache.TryGetValue(type, out string path))
-            {
-                path = Path.Combine(Application.persistentDataPath, prefix, type.FullName);
-                cache.Add(type, path);
-            }
-
-            return path;
-        }
-
-        public static string GetPath<T>()
-        {
-            return GetPath(typeof(T));
-        }
-    }
-
-    public abstract class SingletonPersistent<T> where T : SingletonPersistent<T>, new()
-    {
-        private static T m_instance;
-
+        /// <summary>
+        /// Gets the instance of the singleton.
+        /// </summary>
         public static T Instance
         {
             get
             {
-                if (m_instance == null)
+                if (instance == null)
                 {
-                    m_instance = new T();
-                    m_instance.OnLoad(TypeToPathCache.GetPath<T>());
+                    instance = new T();
+                    instance.OnLoad(TypeToPathCache.GetPath<T>());
                 }
 
-                return m_instance;
+                return instance;
             }
         }
 
-        public static bool HasInstance
-        {
-            get
-            {
-                return m_instance != null;
-            }
-        }
-
+        /// <summary>
+        /// Destroy the instance. Instance not saved will lose.
+        /// </summary>
         public static void Destroy()
         {
-            m_instance = null;
+            instance = null;
         }
 
+        /// <summary>
+        /// Save the singleton to disk.
+        /// </summary>
         public static void Save()
         {
             if (HasInstance)
             {
                 string path = TypeToPathCache.GetPath<T>();
-                m_instance.OnSave(path);
+                instance.OnSave(path);
             }
         }
 
+        /// <summary>
+        /// Load data for an instance from disk and deserialize.
+        /// </summary>
+        /// <param name="path">Path of persistent data.</param>
+        /// <returns>Success deserialize and load.</returns>
         protected virtual bool OnLoad(string path)
         {
             if (!File.Exists(path))
@@ -107,15 +105,21 @@ namespace AillieoUtils
                         JsonUtility.FromJsonOverwrite(json, this);
                     }
                 }
+
                 return true;
             }
             catch (Exception e)
             {
-                UnityEngine.Debug.LogError(e);
+                Debug.LogError(e);
                 return false;
             }
         }
 
+        /// <summary>
+        /// Serialize an instance and save to disk.
+        /// </summary>
+        /// <param name="path">Path of persistent data.</param>
+        /// <returns>Success serialize and save.</returns>
         protected virtual bool OnSave(string path)
         {
             try
@@ -140,9 +144,40 @@ namespace AillieoUtils
             }
             catch (Exception e)
             {
-                UnityEngine.Debug.LogError(e);
+                Debug.LogError(e);
                 return false;
             }
+        }
+    }
+
+    internal static class TypeToPathCache
+    {
+        private static readonly string prefix = "SingletonObjs";
+        private static Dictionary<Type, string> cache;
+
+        public static string GetPath<T>()
+        {
+            return GetPath(typeof(T));
+        }
+
+        private static string GetPath(Type type)
+        {
+            if (cache == null)
+            {
+                cache = AppDomain.CurrentDomain.GetAssemblies()
+                    .SelectMany(a => a.GetTypes())
+                    .Select(t => (t, t.GetCustomAttribute<PersistentPathAttribute>()))
+                    .Where(tp => tp.Item2 != null)
+                    .ToDictionary(tp => tp.Item1, tp => Path.Combine(Application.persistentDataPath, tp.Item2.path));
+            }
+
+            if (!cache.TryGetValue(type, out string path))
+            {
+                path = Path.Combine(Application.persistentDataPath, prefix, type.FullName);
+                cache.Add(type, path);
+            }
+
+            return path;
         }
     }
 }

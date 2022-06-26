@@ -1,52 +1,80 @@
-using System;
-using System.Linq;
-using UnityEngine;
-using System.Collections.Generic;
-using System.Reflection;
-#if UNITY_EDITOR
-using System.IO;
-using UnityEditor;
-using UnityEditor.Build;
-using UnityEditorInternal;
-using UnityEditor.Build.Reporting;
-#endif
+// -----------------------------------------------------------------------
+// <copyright file="SingletonScriptableObject.cs" company="AillieoTech">
+// Copyright (c) AillieoTech. All rights reserved.
+// </copyright>
+// -----------------------------------------------------------------------
 
 namespace AillieoUtils
 {
-    public abstract class SingletonScriptableObject<T> : BaseSingletonScriptableObject
-        where T : ScriptableObject
-    {
-        private static T m_instance;
+    using System;
+    using System.Collections.Generic;
+    using System.Linq;
+    using System.Reflection;
+    using UnityEngine;
+#if UNITY_EDITOR
+    using System.IO;
+    using UnityEditor;
+    using UnityEditor.Build;
+    using UnityEditor.Build.Reporting;
+    using UnityEditorInternal;
+#endif
 
+    /// <summary>
+    /// Base singleton <see cref = "ScriptableObject" /> class.
+    /// </summary>
+    /// <typeparam name="T">Type of singleton class.</typeparam>
+    public abstract class SingletonScriptableObject<T> : BaseSingletonScriptableObject
+        where T : SingletonScriptableObject<T>
+    {
+        private static T instance;
+
+        /// <summary>
+        /// Gets a value indicating whether the instance is created.
+        /// </summary>
+        public static bool HasInstance => instance != null;
+
+        /// <summary>
+        /// Gets the instance of the singleton.
+        /// </summary>
         public static T Instance
         {
             get
             {
-#if DEBUG
+#if DEVELOPMENT_BUILD
                 if (m_instance == null)
                 {
-                    UnityEngine.Debug.LogError(
+                    Debug.LogError(
                         $"Failed to get instance for {typeof(T)}, make sure it is included in building process");
                 }
 #endif
-                return m_instance;
+                return instance;
             }
         }
 
+        /// <summary>
+        /// Awake method for <see cref="ScriptableObject"/>.
+        /// </summary>
         protected virtual void Awake()
         {
             Debug.Log($"SingletonScriptableObject Awake: {typeof(T)}");
-            m_instance = this as T;
+            instance = this as T;
         }
     }
 
-    // 用于在ProjectSettings 显示 覆盖默认的path
+    /// <summary>
+    /// Provides custom path and keywords settings for a <see cref="SingletonScriptableObject{T}"/> instance in ProjectSettings window.
+    /// </summary>
     [AttributeUsage(AttributeTargets.Class, Inherited = false)]
-    public class SettingsMenuPathAttribute : Attribute
+    public sealed class SettingsMenuPathAttribute : Attribute
     {
         internal readonly string path;
         internal readonly string[] keywords;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="SettingsMenuPathAttribute"/> class.
+        /// </summary>
+        /// <param name="path">Display path in ProjectSettings window.</param>
+        /// <param name="keywords">Keywords in ProjectSettings window.</param>
         public SettingsMenuPathAttribute(string path, string[] keywords = null)
         {
             this.path = path;
@@ -54,28 +82,17 @@ namespace AillieoUtils
         }
     }
 
+    /// <summary>
+    /// Internal base class for <see cref="SingletonScriptableObject{T}"/>.
+    /// </summary>
     public abstract class BaseSingletonScriptableObject : ScriptableObject
     {
-
 #if UNITY_EDITOR
-        protected virtual bool ShouldIncludeInBuild(BuildReport report)
-        {
-            return true;
-        }
 
-        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-        private static void LoadAllInstances()
-        {
-            foreach (Type type in singletonScriptableObjectTypes)
-            {
-                LoadOrCreateInstanceForType(type);
-            }
-        }
+        private static readonly Dictionary<Type, ScriptableObject> cachedInstanceForType = new Dictionary<Type, ScriptableObject>();
+        private static readonly string projectSettingAssetsFolder = "ProjectSettings/SingletonScriptableObjects/";
 
         private static Type[] cachedSingletonScriptableObjectTypes;
-        private static readonly Dictionary<Type, ScriptableObject> cachedInstanceForType = new Dictionary<Type, ScriptableObject>();
-
-        private static readonly string projectSettingAssetsFolder = "ProjectSettings/SingletonScriptableObjects/";
 
         private static Type[] singletonScriptableObjectTypes
         {
@@ -92,6 +109,25 @@ namespace AillieoUtils
                 }
 
                 return cachedSingletonScriptableObjectTypes;
+            }
+        }
+
+        /// <summary>
+        /// Should include this asset in build process.
+        /// </summary>
+        /// <param name="report">Current building report.</param>
+        /// <returns>Should include or not.</returns>
+        protected virtual bool ShouldIncludeInBuild(BuildReport report)
+        {
+            return true;
+        }
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void LoadAllInstances()
+        {
+            foreach (Type type in singletonScriptableObjectTypes)
+            {
+                LoadOrCreateInstanceForType(type);
             }
         }
 
@@ -151,59 +187,32 @@ namespace AillieoUtils
             return instance;
         }
 
-        private static ScriptableObject ResetInstance(Type type)
+        private static void ResetInstance(Type type)
         {
             ScriptableObject asset = LoadFromProjectSettingsFolder(type);
 
             DestroyImmediate(asset);
             cachedInstanceForType.Remove(type);
 
-            return CreateInstanceForType(type);
+            CreateInstanceForType(type);
         }
 
         internal class Provider : SettingsProvider
         {
-            private static readonly string prefix = "Project/";
             private readonly Type type;
 
             private ScriptableObject asset;
-            private UnityEditor.Editor editor;
+            private Editor editor;
             private GenericMenu contextMenu;
-
-            public override void OnTitleBarGUI()
-            {
-                base.OnTitleBarGUI();
-
-                if (GUILayout.Button(EditorGUIUtility.IconContent("_Popup"), "IN TitleText"))
-                {
-                    contextMenu.ShowAsContext();
-                }
-            }
-
-            public override void OnGUI(string search)
-            {
-                base.OnGUI(search);
-
-                asset = LoadOrCreateInstanceForType(type);
-
-                if (editor == null || editor.target != asset)
-                {
-                    editor = UnityEditor.Editor.CreateEditor(asset);
-                }
-
-                EditorGUI.BeginChangeCheck();
-
-                editor.OnInspectorGUI();
-
-                if (EditorGUI.EndChangeCheck())
-                {
-                    SaveToProjectSettingsFolder(asset);
-                }
-            }
 
             private Provider(string path, Type type, string[] keywords)
                 : base(path, SettingsScope.Project)
             {
+                if (type == null)
+                {
+                    throw new ArgumentNullException(nameof(type));
+                }
+
                 this.type = type;
 
                 this.contextMenu = new GenericMenu();
@@ -213,7 +222,7 @@ namespace AillieoUtils
                 {
                     this.keywords = keywords;
                 }
-                else
+                else if (!string.IsNullOrEmpty(type.FullName))
                 {
                     this.keywords = type.FullName.Split('.')
                         .Append("Aillieo")
@@ -240,13 +249,46 @@ namespace AillieoUtils
                             path = $"{settingsMenuPath.path}";
                         }
 
-                        if (string.IsNullOrWhiteSpace(path))
+                        if (string.IsNullOrWhiteSpace(path) && !string.IsNullOrEmpty(type.FullName))
                         {
                             path = type.FullName.Replace('.', '/');
                         }
 
                         return new Provider(path, type, keywords);
-                    }).ToArray();
+                    })
+                    .Select(provider => provider as SettingsProvider)
+                    .ToArray();
+            }
+
+            public override void OnTitleBarGUI()
+            {
+                base.OnTitleBarGUI();
+
+                if (GUILayout.Button(EditorGUIUtility.IconContent("_Popup"), "IN TitleText"))
+                {
+                    this.contextMenu.ShowAsContext();
+                }
+            }
+
+            public override void OnGUI(string search)
+            {
+                base.OnGUI(search);
+
+                this.asset = LoadOrCreateInstanceForType(this.type);
+
+                if (this.editor == null || this.editor.target != this.asset)
+                {
+                    this.editor = Editor.CreateEditor(this.asset);
+                }
+
+                EditorGUI.BeginChangeCheck();
+
+                this.editor.OnInspectorGUI();
+
+                if (EditorGUI.EndChangeCheck())
+                {
+                    SaveToProjectSettingsFolder(this.asset);
+                }
             }
         }
 
@@ -257,7 +299,6 @@ namespace AillieoUtils
             private static readonly string tempFolder = "Assets/SingletonScriptableObject Temp Folder";
 
             public int callbackOrder => -100;
-
 
             public void OnPreprocessBuild(BuildReport report)
             {
