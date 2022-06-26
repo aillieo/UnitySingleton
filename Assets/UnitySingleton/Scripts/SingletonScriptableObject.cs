@@ -142,7 +142,7 @@ namespace AillieoUtils
 
         private static ScriptableObject LoadFromProjectSettingsFolder(Type type)
         {
-            string path = Path.Combine(projectSettingAssetsFolder, $"{type.Name}.asset");
+            var path = Path.Combine(projectSettingAssetsFolder, $"{type.Name}.asset");
             UnityEngine.Object[] objs = InternalEditorUtility.LoadSerializedFileAndForget(path);
             ScriptableObject asset = null;
             if (objs != null && objs.Length > 0)
@@ -239,7 +239,7 @@ namespace AillieoUtils
                     .Where(type => type != null)
                     .Select(type =>
                     {
-                        string path = string.Empty;
+                        var path = string.Empty;
                         string[] keywords = null;
                         var settingsMenuPath = type.GetCustomAttribute<SettingsMenuPathAttribute>();
 
@@ -304,11 +304,11 @@ namespace AillieoUtils
             {
                 Directory.CreateDirectory(tempFolder);
 
-                HashSet<UnityEngine.Object> preloadSet = new HashSet<UnityEngine.Object>(PlayerSettings.GetPreloadedAssets());
+                var preloadSet = new HashSet<UnityEngine.Object>(PlayerSettings.GetPreloadedAssets());
 
                 foreach (var type in singletonScriptableObjectTypes)
                 {
-                    string path = Path.Combine(tempFolder, $"{type.Name}.asset");
+                    var path = Path.Combine(tempFolder, $"{type.Name}.asset");
 
                     AssetDatabase.DeleteAsset(path);
 
@@ -329,11 +329,11 @@ namespace AillieoUtils
 
             public void OnPostprocessBuild(BuildReport report)
             {
-                HashSet<UnityEngine.Object> preloadSet = new HashSet<UnityEngine.Object>(PlayerSettings.GetPreloadedAssets());
+                var preloadSet = new HashSet<UnityEngine.Object>(PlayerSettings.GetPreloadedAssets());
 
                 foreach (var type in singletonScriptableObjectTypes)
                 {
-                    string path = Path.Combine(tempFolder, $"{type.Name}.asset");
+                    var path = Path.Combine(tempFolder, $"{type.Name}.asset");
                     ScriptableObject asset = AssetDatabase.LoadAssetAtPath<ScriptableObject>(path);
 
                     preloadSet.Remove(asset);
