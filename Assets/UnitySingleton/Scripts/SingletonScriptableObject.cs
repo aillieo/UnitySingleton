@@ -41,7 +41,7 @@ namespace AillieoUtils
             get
             {
 #if DEVELOPMENT_BUILD
-                if (m_instance == null)
+                if (instance == null)
                 {
                     Debug.LogError(
                         $"Failed to get instance for {typeof(T)}, make sure it is included in building process");
