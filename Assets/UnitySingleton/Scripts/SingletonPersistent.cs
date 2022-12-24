@@ -110,7 +110,7 @@ namespace AillieoUtils
             }
             catch (Exception e)
             {
-                Debug.LogError(e);
+                Debug.LogException(e);
                 return false;
             }
         }
@@ -152,7 +152,7 @@ namespace AillieoUtils
 
     internal static class TypeToPathCache
     {
-        private static readonly string prefix = "SingletonObjs";
+        private static readonly string folder = "SingletonPersistent";
         private static Dictionary<Type, string> cache;
 
         public static string GetPath<T>()
@@ -173,7 +173,11 @@ namespace AillieoUtils
 
             if (!cache.TryGetValue(type, out var path))
             {
-                path = Path.Combine(Application.persistentDataPath, prefix, type.FullName);
+#if UNITY_EDITOR
+                path = Path.Combine(Application.dataPath, "..", folder, type.FullName);
+#else
+                path = Path.Combine(Application.persistentDataPath, folder, type.FullName);
+#endif
                 cache.Add(type, path);
             }
 
