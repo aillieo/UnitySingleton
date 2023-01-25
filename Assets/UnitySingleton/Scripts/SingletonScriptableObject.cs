@@ -325,10 +325,17 @@ namespace AillieoUtils
                 }
 
                 PlayerSettings.SetPreloadedAssets(preloadSet.ToArray());
+
+                EditorApplication.update += this.CheckBuildStatus;
             }
 
             public void OnPostprocessBuild(BuildReport report)
             {
+                if (!Directory.Exists(tempFolder))
+                {
+                    return;
+                }
+
                 var preloadSet = new HashSet<UnityEngine.Object>(PlayerSettings.GetPreloadedAssets());
 
                 foreach (var type in singletonScriptableObjectTypes)
@@ -346,6 +353,31 @@ namespace AillieoUtils
                 File.Delete($"{tempFolder}.meta");
 
                 AssetDatabase.Refresh();
+            }
+
+            private void CheckBuildStatus()
+            {
+                if (!BuildPipeline.isBuildingPlayer)
+                {
+                    EditorApplication.update -= this.CheckBuildStatus;
+
+                    BuildReport lastBuildReport = this.TryLoadLastBuildReport();
+                    if (lastBuildReport.summary.result != BuildResult.Succeeded)
+                    {
+                        this.OnPostprocessBuild(lastBuildReport);
+                    }
+                }
+            }
+
+            private BuildReport TryLoadLastBuildReport()
+            {
+                UnityEngine.Object[] allObjects = InternalEditorUtility.LoadSerializedFileAndForget("Library/LastBuild.buildreport");
+                if (allObjects != null && allObjects.Length > 0)
+                {
+                    return allObjects.FirstOrDefault(o => o is BuildReport) as BuildReport;
+                }
+
+                return null;
             }
         }
 #endif
