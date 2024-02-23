@@ -251,7 +251,7 @@ namespace AillieoUtils
 
                         if (string.IsNullOrWhiteSpace(path) && !string.IsNullOrEmpty(type.FullName))
                         {
-                            path = type.FullName.Replace('.', '/');
+                            path = $"Project/{type.FullName.Replace('.', '/')}";
                         }
 
                         return new Provider(path, type, keywords);
@@ -325,6 +325,8 @@ namespace AillieoUtils
                 }
 
                 PlayerSettings.SetPreloadedAssets(preloadSet.ToArray());
+                AssetDatabase.SaveAssets();
+                AssetDatabase.Refresh();
 
                 EditorApplication.update += this.CheckBuildStatus;
             }
@@ -352,6 +354,7 @@ namespace AillieoUtils
                 Directory.Delete(tempFolder);
                 File.Delete($"{tempFolder}.meta");
 
+                AssetDatabase.SaveAssets();
                 AssetDatabase.Refresh();
             }
 
