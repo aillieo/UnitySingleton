@@ -120,7 +120,7 @@ namespace AillieoUtils
 #else
                 GameObject.Destroy(instance.gameObject);
 #endif
-
+                instance = null;
             }
         }
 

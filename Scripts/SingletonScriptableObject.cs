@@ -40,13 +40,15 @@ namespace AillieoUtils
         {
             get
             {
-#if DEVELOPMENT_BUILD
                 if (instance == null)
                 {
-                    Debug.LogError(
-                        $"Failed to get instance for {typeof(T)}, make sure it is included in building process");
-                }
+#if UNITY_EDITOR
+                    LoadOrCreateInstanceForType(typeof(T));
+#else
+                    instance = Resources.Load<T>($"{typeof(T).FullName}");
 #endif
+                }
+
                 return instance;
             }
         }
@@ -122,7 +124,7 @@ namespace AillieoUtils
             return true;
         }
 
-        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        // [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void LoadAllInstances()
         {
             foreach (Type type in singletonScriptableObjectTypes)
@@ -136,13 +138,13 @@ namespace AillieoUtils
             Directory.CreateDirectory(projectSettingAssetsFolder);
             InternalEditorUtility.SaveToSerializedFileAndForget(
                 new UnityEngine.Object[] { asset },
-                Path.Combine(projectSettingAssetsFolder, $"{asset.GetType().Name}.asset"),
+                Path.Combine(projectSettingAssetsFolder, $"{asset.GetType().FullName}.asset"),
                 true);
         }
 
         private static ScriptableObject LoadFromProjectSettingsFolder(Type type)
         {
-            var path = Path.Combine(projectSettingAssetsFolder, $"{type.Name}.asset");
+            var path = Path.Combine(projectSettingAssetsFolder, $"{type.FullName}.asset");
             UnityEngine.Object[] objs = InternalEditorUtility.LoadSerializedFileAndForget(path);
             ScriptableObject asset = null;
             if (objs != null && objs.Length > 0)
@@ -162,7 +164,7 @@ namespace AillieoUtils
         {
             ScriptableObject asset = CreateInstance(type);
 
-            asset.name = type.Name;
+            asset.name = type.FullName;
             asset.hideFlags = HideFlags.DontSaveInEditor | HideFlags.DontUnloadUnusedAsset;
 
             SaveToProjectSettingsFolder(asset);
@@ -170,7 +172,7 @@ namespace AillieoUtils
             return asset;
         }
 
-        private static ScriptableObject LoadOrCreateInstanceForType(Type type)
+        internal static ScriptableObject LoadOrCreateInstanceForType(Type type)
         {
             if (!cachedInstanceForType.TryGetValue(type, out ScriptableObject instance) || instance == null)
             {
@@ -251,7 +253,7 @@ namespace AillieoUtils
 
                         if (string.IsNullOrWhiteSpace(path) && !string.IsNullOrEmpty(type.FullName))
                         {
-                            path = $"Project/{type.FullName.Replace('.', '/')}";
+                            path = type.FullName.Replace('.', '/');
                         }
 
                         return new Provider(path, type, keywords);
@@ -297,18 +299,20 @@ namespace AillieoUtils
         internal class AssetBuildProcessor : IPreprocessBuildWithReport, IPostprocessBuildWithReport
         {
             private static readonly string tempFolder = "Assets/SingletonScriptableObject Temp Folder";
+            private static readonly string tempFolderResources = $"{tempFolder}/Resources";
 
             public int callbackOrder => -100;
 
             public void OnPreprocessBuild(BuildReport report)
             {
                 Directory.CreateDirectory(tempFolder);
+                Directory.CreateDirectory(tempFolderResources);
 
                 var preloadSet = new HashSet<UnityEngine.Object>(PlayerSettings.GetPreloadedAssets());
 
                 foreach (var type in singletonScriptableObjectTypes)
                 {
-                    var path = Path.Combine(tempFolder, $"{type.Name}.asset");
+                    var path = Path.Combine(tempFolderResources, $"{type.FullName}.asset");
 
                     AssetDatabase.DeleteAsset(path);
 
@@ -325,8 +329,6 @@ namespace AillieoUtils
                 }
 
                 PlayerSettings.SetPreloadedAssets(preloadSet.ToArray());
-                AssetDatabase.SaveAssets();
-                AssetDatabase.Refresh();
 
                 EditorApplication.update += this.CheckBuildStatus;
             }
@@ -342,7 +344,7 @@ namespace AillieoUtils
 
                 foreach (var type in singletonScriptableObjectTypes)
                 {
-                    var path = Path.Combine(tempFolder, $"{type.Name}.asset");
+                    var path = Path.Combine(tempFolderResources, $"{type.FullName}.asset");
                     ScriptableObject asset = AssetDatabase.LoadAssetAtPath<ScriptableObject>(path);
 
                     preloadSet.Remove(asset);
@@ -351,11 +353,12 @@ namespace AillieoUtils
 
                 PlayerSettings.SetPreloadedAssets(preloadSet.ToArray());
 
+                Directory.Delete(tempFolderResources);
+                File.Delete($"{tempFolderResources}.meta");
                 Directory.Delete(tempFolder);
                 File.Delete($"{tempFolder}.meta");
 
                 AssetDatabase.SaveAssets();
-                AssetDatabase.Refresh();
             }
 
             private void CheckBuildStatus()
