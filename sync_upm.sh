@@ -122,7 +122,7 @@ generate_guid() {
 
 restore_meta_for_path() {
     local path=$1
-    path_meta="${path%.meta}"
+    path_meta="${path}.meta"
 
     if [ -f "$path" ]; then
         # Path is a file
@@ -131,7 +131,7 @@ restore_meta_for_path() {
             git add "$path_meta"
         else
             # echo "$path_meta is not found in $UPM_BRANCH. Will create a new file."
-            generate_meta_file "$path_meta" 0
+            generate_meta_file "$path" 0
             git add "$path_meta"
         fi
     elif [ -d "$path" ]; then
@@ -142,8 +142,7 @@ restore_meta_for_path() {
             git add "$path_meta"
         else
             # echo "$path_meta is not found in $UPM_BRANCH. Will create a new file."
-            file_name="${path%.meta}"
-            generate_meta_file "$path_meta" 1
+            generate_meta_file "$path" 1
             git add "$path_meta"
         fi
 
